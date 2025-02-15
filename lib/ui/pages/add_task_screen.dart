@@ -34,7 +34,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   int _selctedColor = 0;
   @override
   Widget build(BuildContext context) {
-    log('${Get.isDarkMode} from build add tsk');
     return Scaffold(
       appBar: _appBar(),
       body: Container(

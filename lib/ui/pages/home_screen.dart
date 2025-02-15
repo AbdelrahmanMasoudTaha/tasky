@@ -1,24 +1,23 @@
 import 'dart:developer';
 
+import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:date_picker_timeline/date_picker_timeline.dart';
-import 'package:tasky/models/task.dart';
-import 'package:tasky/services/notification_seervices.dart';
-import 'package:tasky/services/theme_services.dart';
-import 'package:tasky/ui/pages/add_task_screen.dart';
-import 'package:tasky/ui/size_config.dart';
-import 'package:tasky/ui/theme.dart';
-import 'package:tasky/ui/widgets/my_input_field.dart';
-import 'package:tasky/ui/widgets/task_tile.dart';
+//import 'package:tasky/services/notification_services%20from%20course.dart';
 
 import '../../controllers/task_controller.dart';
+import '../../models/task.dart';
+import '../../services/notification_seervices.dart';
+import '../../services/theme_services.dart';
+import '../size_config.dart';
+import '../theme.dart';
 import '../widgets/mybutton.dart';
+import '../widgets/task_tile.dart';
+import 'add_task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -79,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MyButton(
             lable: '+ Add Task',
             onTap: () async {
-              await Get.to(const AddTaskScreen());
+              await Get.to(() => const AddTaskScreen());
               //ThemeServices().switchMode();
 
               _taskController.getTasks();
@@ -117,30 +116,66 @@ class _HomeScreenState extends State<HomeScreen> {
 
   _showTasks() {
     return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          _showBottomSheet(
-            context,
-            Task(
-              title: 'title 1',
-              note: 'sdfdfasf',
-              isCompleted: 1,
-              startTime: '12:15',
-              endTime: '8:00',
-              color: 1,
+      child: ListView.builder(
+        itemBuilder: (context, index) {
+          var task = _taskController.taskList[index];
+          var hourr = task.startTime.toString().split(':')[0];
+          var minutee = task.startTime.toString().split(':')[1];
+
+          int hour;
+          int minute;
+          DateTime dateTime;
+          RegExp regex = RegExp(r'(\d+):(\d+)\s*(AM|PM)');
+          var match = regex.firstMatch(task.startTime!);
+
+          if (match != null) {
+            hour = int.parse(match.group(1)!);
+            minute = int.parse(match.group(2)!);
+            bool isPM = match.group(3) == "PM";
+
+            // Convert to 24-hour format
+            if (isPM && hour != 12) hour += 12;
+            if (!isPM && hour == 12) hour = 0;
+
+            dateTime = DateTime.now().copyWith(hour: hour, minute: minute);
+          } else {
+            hour = 1;
+            minute = 0;
+            dateTime = DateTime.now();
+            log('from else hours = $hour        and min = $minute');
+          }
+
+          // var date = DateFormat.jm().parse(task.startTime!);
+          //var myTime = DateFormat('HH:MM').format(dateTime);
+          // log('myTime = $myTime   ');
+          // log('date = $date   ');
+          NotifyHelper().scheduledNotification(
+            hour,
+            minute,
+            task,
+          );
+          return AnimationConfiguration.staggeredList(
+            duration: const Duration(milliseconds: 1000),
+            position: index,
+            child: SlideAnimation(
+              horizontalOffset: 300,
+              child: FadeInAnimation(
+                child: GestureDetector(
+                  onTap: () {
+                    _showBottomSheet(
+                      context,
+                      task,
+                    );
+                  },
+                  child: TaskTile(
+                    task,
+                  ),
+                ),
+              ),
             ),
           );
         },
-        child: TaskTile(
-          Task(
-            title: 'title 1',
-            note: 'sdfdfasf',
-            isCompleted: 0,
-            startTime: '12:15',
-            endTime: '8:00',
-            color: 1,
-          ),
-        ),
+        itemCount: _taskController.taskList.length,
       ),
 
       //     child: Obx(
@@ -171,10 +206,21 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () async {
             ThemeServices().switchMode();
 
-            NotifyHelper()
-                .displayNotification(title: 'theme changed', body: 'body');
-            NotifyHelper().scheduledNotification();
-            await Future.delayed(const Duration(milliseconds: 100));
+            // NotifyHelper().displayNotification(
+            //     title: 'theme changed nowwwww ', body: 'body');
+            // NotifyHelper().scheduledNotification(
+            //     17,
+            //     37,
+            //     Task(
+            //       id: 1,
+            //       isCompleted: 1,
+            //       color: 1,
+            //       note: 'note Something ',
+            //       title: 'Note 2',
+            //       startTime: '12:45',
+            //       endTime: '6:00',
+            //     ));
+            await Future.delayed(const Duration(milliseconds: 70));
             setState(() {}); // Wait for rebuild
           },
         ),

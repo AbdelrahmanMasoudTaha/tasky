@@ -17,7 +17,7 @@ class TaskTile extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: getProportionateScreenWidth(
-          SizeConfig.orientation == Orientation.landscape ? 6 : 24,
+          SizeConfig.orientation == Orientation.landscape ? 6 : 16,
         ),
       ),
       child: Container(
@@ -50,6 +50,7 @@ class TaskTile extends StatelessWidget {
                       height: 12,
                     ),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.access_time_rounded,
@@ -57,7 +58,7 @@ class TaskTile extends StatelessWidget {
                           size: 20,
                         ),
                         const SizedBox(
-                          width: 12,
+                          width: 10,
                         ),
                         Text(
                           '${task.startTime} - ${task.endTime}',
