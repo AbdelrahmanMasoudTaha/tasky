@@ -8,6 +8,7 @@ import 'package:tasky/services/theme_services.dart';
 import 'package:tasky/ui/theme.dart';
 import 'package:tasky/ui/widgets/mybutton.dart';
 
+import '../../models/task.dart';
 import '../widgets/my_input_field.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -63,7 +64,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     Icons.calendar_today_outlined,
                     color: Colors.grey,
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    _getDateFromUser();
+                  },
                 ),
               ),
               Row(
@@ -77,7 +80,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           Icons.access_time_rounded,
                           color: Colors.grey,
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          _getTimeFromUser(isStartTime: true);
+                        },
                       ),
                     ),
                   ),
@@ -93,7 +98,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           Icons.access_time_rounded,
                           color: Colors.grey,
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          _getTimeFromUser(isStartTime: false);
+                        },
                       ),
                     ),
                   ),
@@ -186,7 +193,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   MyButton(
                       lable: 'Creat Task',
                       onTap: () {
-                        Get.back();
+                        _validateTask();
                       })
                 ],
               )
@@ -215,6 +222,40 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
         ],
       );
+
+  _validateTask() {
+    if (_noteController.text.isNotEmpty && _titleController.text.isNotEmpty) {
+      _addTaskToDb();
+      Get.back();
+    } else if (_noteController.text.isEmpty || _titleController.text.isEmpty) {
+      Get.snackbar('Required Feild', "Please Fill All Feilds",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.white,
+          colorText: Colors.pink,
+          icon: const Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.red,
+          ));
+    } else {
+      log('#########   the task dose not saved successfully   #########');
+    }
+  }
+
+  _addTaskToDb() async {
+    int val = await _taskController.addTask(
+        task: Task(
+      title: _titleController.text,
+      note: _noteController.text,
+      color: _selctedColor,
+      date: DateFormat.yMd().format(_selectedDate),
+      endTime: _endDate,
+      startTime: _startDate,
+      isCompleted: 0,
+      remind: _selecteddRemind,
+      repeat: _selectedRepeat,
+    ));
+    log(val.toString());
+  }
 
   Column _colorPalet() {
     return Column(
@@ -252,5 +293,50 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         )
       ],
     );
+  }
+
+  void _getTimeFromUser({required bool isStartTime}) async {
+    TimeOfDay? _pickedTime = await showTimePicker(
+        context: context,
+        initialEntryMode: TimePickerEntryMode.input,
+        initialTime: isStartTime
+            ? TimeOfDay.fromDateTime(DateTime.now())
+            : TimeOfDay.fromDateTime(
+                DateTime.now().add(const Duration(minutes: 15))));
+    if (_pickedTime != null) {
+      String _formattedTime = _pickedTime.format(context);
+      if (isStartTime) setState(() => _startDate = _formattedTime);
+      if (!isStartTime) setState(() => _endDate = _formattedTime);
+    } else {
+      log('picked time is null');
+    }
+  }
+
+  void _getDateFromUser() async {
+    DateTime? _pickedDate = await showDatePicker(
+        context: context,
+        initialEntryMode: DatePickerEntryMode.input,
+        builder: (BuildContext context, Widget? child) {
+          return MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(alwaysUse24HourFormat: false), // Force 12-hour format
+            child: child!,
+          );
+        },
+        firstDate: DateTime(
+          DateTime.now().year - 1,
+        ),
+        lastDate: DateTime(
+          DateTime.now().year + 2,
+        ),
+        initialDate: _selectedDate);
+
+    if (_pickedDate != null) {
+      setState(() {
+        _selectedDate = _pickedDate;
+      });
+    } else {
+      log('picked date is null');
+    }
   }
 }

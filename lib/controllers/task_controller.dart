@@ -49,5 +49,8 @@ class TaskController extends GetxController {
       endTime: '6:00',
     ),
   ];
+
   getTasks() {}
+
+  addTask({required Task task}) {}
 }
