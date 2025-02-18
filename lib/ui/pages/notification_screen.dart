@@ -25,7 +25,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         foregroundColor: Get.isDarkMode ? Colors.white : darkGreyClr,
         backgroundColor: context.theme.primaryColor,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Get.isDarkMode ? Colors.white : darkGreyClr,
+          ),
           onPressed: () => Get.back(),
         ),
         title: Text(

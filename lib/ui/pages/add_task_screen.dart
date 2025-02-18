@@ -262,6 +262,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Color', style: titleStyle),
+        const SizedBox(
+          height: 5,
+        ),
         Wrap(
           children: List.generate(3, (index) {
             return GestureDetector(

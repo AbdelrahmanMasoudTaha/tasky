@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:tasky/db/db_helper.dart';
 //import 'package:tasky/services/notification_services%20from%20course.dart';
 
 import '../../controllers/task_controller.dart';
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     notifyHelper = NotifyHelper();
     notifyHelper.initializNotification();
+    _taskController.getTasks();
   }
 
   final TaskController _taskController = Get.put(TaskController());
@@ -91,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   _addDateBar() {
     return Container(
-      margin: const EdgeInsets.only(top: 6, left: 14),
+      margin: const EdgeInsets.only(top: 6, left: 14, bottom: 10),
       child: DatePicker(
         DateTime.now(),
         height: 100,
@@ -114,81 +116,84 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> onRefresh() async {
+    _taskController.getTasks();
+  }
+
   _showTasks() {
     return Expanded(
-      child: ListView.builder(
-        itemBuilder: (context, index) {
-          var task = _taskController.taskList[index];
-          var hourr = task.startTime.toString().split(':')[0];
-          var minutee = task.startTime.toString().split(':')[1];
-
-          int hour;
-          int minute;
-          DateTime dateTime;
-          RegExp regex = RegExp(r'(\d+):(\d+)\s*(AM|PM)');
-          var match = regex.firstMatch(task.startTime!);
-
-          if (match != null) {
-            hour = int.parse(match.group(1)!);
-            minute = int.parse(match.group(2)!);
-            bool isPM = match.group(3) == "PM";
-
-            // Convert to 24-hour format
-            if (isPM && hour != 12) hour += 12;
-            if (!isPM && hour == 12) hour = 0;
-
-            dateTime = DateTime.now().copyWith(hour: hour, minute: minute);
+      child: Obx(
+        () {
+          if (_taskController.taskList.isEmpty) {
+            return _noTaskMsg();
           } else {
-            hour = 1;
-            minute = 0;
-            dateTime = DateTime.now();
-            log('from else hours = $hour        and min = $minute');
-          }
+            return RefreshIndicator(
+              onRefresh: onRefresh,
+              color: primaryClr,
+              child: ListView.builder(
+                itemBuilder: (context, index) {
+                  var task = _taskController.taskList[index];
 
-          // var date = DateFormat.jm().parse(task.startTime!);
-          //var myTime = DateFormat('HH:MM').format(dateTime);
-          // log('myTime = $myTime   ');
-          // log('date = $date   ');
-          NotifyHelper().scheduledNotification(
-            hour,
-            minute,
-            task,
-          );
-          return AnimationConfiguration.staggeredList(
-            duration: const Duration(milliseconds: 1000),
-            position: index,
-            child: SlideAnimation(
-              horizontalOffset: 300,
-              child: FadeInAnimation(
-                child: GestureDetector(
-                  onTap: () {
-                    _showBottomSheet(
-                      context,
+                  if (task.repeat == 'Daily' ||
+                      task.date == DateFormat.yMd().format(_selectedDate)) {
+                    int hour;
+                    int minute;
+
+                    RegExp regex = RegExp(r'(\d+):(\d+)\s*(AM|PM)');
+                    var match = regex.firstMatch(task.startTime!);
+
+                    if (match != null) {
+                      hour = int.parse(match.group(1)!);
+                      minute = int.parse(match.group(2)!);
+                      bool isPM = match.group(3) == "PM";
+
+                      // Convert to 24-hour format
+                      if (isPM && hour != 12) hour += 12;
+                      if (!isPM && hour == 12) hour = 0;
+                    } else {
+                      hour = 1;
+                      minute = 0;
+                    }
+
+                    // var date = DateFormat.jm().parse(task.startTime!);
+                    //var myTime = DateFormat('HH:MM').format(dateTime);
+                    // log('myTime = $myTime   ');
+                    // log('date = $date   ');
+                    NotifyHelper().scheduledNotification(
+                      hour,
+                      minute,
                       task,
                     );
-                  },
-                  child: TaskTile(
-                    task,
-                  ),
-                ),
+                    return AnimationConfiguration.staggeredList(
+                      duration: const Duration(milliseconds: 1000),
+                      position: index,
+                      child: SlideAnimation(
+                        horizontalOffset: 300,
+                        child: FadeInAnimation(
+                          child: GestureDetector(
+                            onTap: () {
+                              _showBottomSheet(
+                                context,
+                                task,
+                              );
+                            },
+                            child: TaskTile(
+                              task,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    return Container();
+                  }
+                },
+                itemCount: _taskController.taskList.length,
               ),
-            ),
-          );
+            );
+          }
         },
-        itemCount: _taskController.taskList.length,
       ),
-
-      //     child: Obx(
-      //   () {
-      //     if (_taskController.taskList.isEmpty) {
-      //       return _noTaskMsg();
-      //     } else {
-      //       return Container(
-      //         height: 0,
-      //       );
-      //     }
-      //   },
-      // ),
     );
   }
 
@@ -297,7 +302,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? Container()
                 : _buildButtomSheet(
                     lable: 'Task Completed',
-                    onTap: () {},
+                    onTap: () {
+                      _taskController.setTaskAsCompleted(taskId: task.id!);
+                      Get.back();
+                    },
                     clr: primaryClr,
                   ),
             task.isCompleted == 1
@@ -309,8 +317,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
             _buildButtomSheet(
               lable: 'Delet',
-              onTap: () {},
-              clr: primaryClr,
+              onTap: () {
+                _taskController.deleteTask(task: task);
+                Get.back();
+              },
+              clr: Colors.red,
             ),
             Divider(
               color: Get.isDarkMode ? Colors.grey : darkGreyClr,
@@ -333,45 +344,49 @@ class _HomeScreenState extends State<HomeScreen> {
     return Stack(
       children: [
         AnimatedPositioned(
-          duration: const Duration(milliseconds: 2000),
-          child: SingleChildScrollView(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              direction: SizeConfig.orientation == Orientation.landscape
-                  ? Axis.horizontal
-                  : Axis.vertical,
-              children: [
-                SizeConfig.orientation == Orientation.landscape
-                    ? const SizedBox(
-                        height: 10,
-                      )
-                    : const SizedBox(
-                        height: 230,
-                      ),
-                SvgPicture.asset(
-                  'images/task.svg',
-                  semanticsLabel: 'Task',
-                  color: primaryClr.withOpacity(0.65),
-                  height: 100,
-                ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                  child: Text(
-                    'You do not have any Tasks yet! \n Add new tasks to make your day prefect',
-                    style: subTitleStyle,
-                    textAlign: TextAlign.center,
+          duration: const Duration(milliseconds: 950),
+          child: RefreshIndicator(
+            color: primaryClr,
+            onRefresh: onRefresh,
+            child: SingleChildScrollView(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                direction: SizeConfig.orientation == Orientation.landscape
+                    ? Axis.horizontal
+                    : Axis.vertical,
+                children: [
+                  SizeConfig.orientation == Orientation.landscape
+                      ? const SizedBox(
+                          height: 10,
+                        )
+                      : const SizedBox(
+                          height: 230,
+                        ),
+                  SvgPicture.asset(
+                    'images/task.svg',
+                    semanticsLabel: 'Task',
+                    color: primaryClr.withOpacity(0.65),
+                    height: 100,
                   ),
-                ),
-                SizeConfig.orientation == Orientation.landscape
-                    ? const SizedBox(
-                        height: 120,
-                      )
-                    : const SizedBox(
-                        height: 180,
-                      ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 10),
+                    child: Text(
+                      'You do not have any Tasks yet! \n Add new tasks to make your day prefect',
+                      style: subTitleStyle,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizeConfig.orientation == Orientation.landscape
+                      ? const SizedBox(
+                          height: 120,
+                        )
+                      : const SizedBox(
+                          height: 180,
+                        ),
+                ],
+              ),
             ),
           ),
         )
