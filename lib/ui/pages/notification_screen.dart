@@ -81,12 +81,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       const Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.text_format,
                             color: Colors.white,
                             size: 35,
                           ),
-                          const SizedBox(
+                          SizedBox(
                             width: 20,
                           ),
                           Text(

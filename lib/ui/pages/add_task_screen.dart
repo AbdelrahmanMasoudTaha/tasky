@@ -1,10 +1,11 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers, use_build_context_synchronously
+
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:tasky/controllers/task_controller.dart';
-import 'package:tasky/services/theme_services.dart';
 import 'package:tasky/ui/theme.dart';
 import 'package:tasky/ui/widgets/mybutton.dart';
 
@@ -194,6 +195,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       lable: 'Creat Task',
                       onTap: () {
                         _validateTask();
+                        Get.back();
                       })
                 ],
               )
@@ -216,7 +218,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           Padding(
             padding: EdgeInsets.only(right: 8.0),
             child: CircleAvatar(
-              backgroundImage: AssetImage('images/person.jpeg'),
+              backgroundImage: AssetImage('assets/images/person.jpeg'),
               radius: 24,
             ),
           ),
@@ -242,7 +244,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   _addTaskToDb() async {
-    int val = await _taskController.addTask(
+    await _taskController.addTask(
         task: Task(
       title: _titleController.text,
       note: _noteController.text,
@@ -254,7 +256,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       remind: _selecteddRemind,
       repeat: _selectedRepeat,
     ));
-    log(val.toString());
   }
 
   Column _colorPalet() {

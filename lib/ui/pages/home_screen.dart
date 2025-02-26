@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -7,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:tasky/db/db_helper.dart';
 //import 'package:tasky/services/notification_services%20from%20course.dart';
 
 import '../../controllers/task_controller.dart';
@@ -31,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late NotifyHelper notifyHelper;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     notifyHelper = NotifyHelper();
     notifyHelper.initializNotification();
@@ -135,7 +131,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   var task = _taskController.taskList[index];
 
                   if (task.repeat == 'Daily' ||
-                      task.date == DateFormat.yMd().format(_selectedDate)) {
+                      task.date == DateFormat.yMd().format(_selectedDate) ||
+                      (task.repeat == 'Weekly' &&
+                          _selectedDate
+                                      .difference(
+                                          DateFormat.yMd().parse(task.date!))
+                                      .inDays %
+                                  7 ==
+                              0) ||
+                      (task.repeat == 'Monhtly' &&
+                          _selectedDate.day ==
+                              DateFormat.yMd().parse(task.date!).day)) {
                     int hour;
                     int minute;
 
@@ -159,11 +165,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     //var myTime = DateFormat('HH:MM').format(dateTime);
                     // log('myTime = $myTime   ');
                     // log('date = $date   ');
+
                     NotifyHelper().scheduledNotification(
                       hour,
                       minute,
                       task,
                     );
+
                     return AnimationConfiguration.staggeredList(
                       duration: const Duration(milliseconds: 1000),
                       position: index,
@@ -225,15 +233,27 @@ class _HomeScreenState extends State<HomeScreen> {
             //       startTime: '12:45',
             //       endTime: '6:00',
             //     ));
-            await Future.delayed(const Duration(milliseconds: 70));
+            await Future.delayed(const Duration(milliseconds: 100));
             setState(() {}); // Wait for rebuild
           },
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 8.0),
+        actions: [
+          IconButton(
+              icon: Icon(
+                Icons.cleaning_services_rounded,
+                color: ThemeServices().theme == ThemeMode.dark
+                    ? Colors.white
+                    : darkGreyClr,
+                size: 30,
+              ),
+              onPressed: () {
+                _taskController.deleteAllTasks();
+                notifyHelper.canselAllNotification();
+              }),
+          const Padding(
+            padding: EdgeInsets.only(right: 15.0),
             child: CircleAvatar(
-              backgroundImage: AssetImage('images/person.jpeg'),
+              backgroundImage: AssetImage('assets/images/person.jpeg'),
               radius: 24,
             ),
           ),
@@ -304,6 +324,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     lable: 'Task Completed',
                     onTap: () {
                       _taskController.setTaskAsCompleted(taskId: task.id!);
+                      notifyHelper.canselNotification(task);
+
                       Get.back();
                     },
                     clr: primaryClr,
@@ -319,6 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
               lable: 'Delet',
               onTap: () {
                 _taskController.deleteTask(task: task);
+                notifyHelper.canselNotification(task);
                 Get.back();
               },
               clr: Colors.red,
@@ -364,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 230,
                         ),
                   SvgPicture.asset(
-                    'images/task.svg',
+                    'assets/images/task.svg',
                     semanticsLabel: 'Task',
                     color: primaryClr.withOpacity(0.65),
                     height: 100,

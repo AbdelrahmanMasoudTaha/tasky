@@ -26,12 +26,12 @@ dependencies:
   flutter_svg:
   rxdart: 
   timezone: ^0.10.0
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_launcher_icons: 
 
 
   
@@ -40,15 +40,26 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "images/appicon.jpeg"
+  image_path: "assets/images/appicon.jpeg"
 
 
 flutter:
   uses-material-design: true
 
   assets:
-    - images/person.jpeg
-    - images/task.svg
+    - assets/images/person.jpeg
+    - assets/images/task.svg
+    - assets/fonts/Lato-Bold.ttf
+  fonts:
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato-Black.ttf
+        - asset: assets/fonts/Lato-Italic.ttf
+        - asset: assets/fonts/Lato-Light.ttf
+        - asset: assets/fonts/Lato-Regular.ttf
+        - asset: assets/fonts/Lato-Thin.ttf
+        - asset: assets/fonts/Lato-Bold.ttf
+          weight: 700 
 
   # To add assets to your application, add an assets section, like this:
   # assets:

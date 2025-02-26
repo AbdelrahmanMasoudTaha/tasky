@@ -1,9 +1,8 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -52,7 +51,6 @@ class NotifyHelper {
   }
 
   displayNotification({required String title, required String body}) async {
-    print('doing test');
     var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
         'your channel id', 'your channel name',
         channelDescription: 'your channel description',
@@ -76,7 +74,8 @@ class NotifyHelper {
       task.id!,
       task.title,
       task.note,
-      _nextInstanceOfTime(hour, minutes),
+      _nextInstanceOfTime(
+          hour, minutes, task.remind!, task.repeat!, task.date!),
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'your_channel_id',
@@ -94,21 +93,45 @@ class NotifyHelper {
     );
   }
 
-  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
+  tz.TZDateTime _nextInstanceOfTime(
+      int hour, int minute, int remind, String repeat, String date) {
     final tz.Location location =
         tz.getLocation('Africa/Cairo'); // Explicitly use Cairo timezone
     final tz.TZDateTime now = tz.TZDateTime.now(location);
     //final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    var formattedDate = DateFormat.yMd().parse(date);
 
+    final tz.TZDateTime fd = tz.TZDateTime.from(formattedDate, location);
     tz.TZDateTime scheduledDate =
-        tz.TZDateTime(location, now.year, now.month, now.day, hour, minute);
+        tz.TZDateTime(location, fd.year, fd.month, fd.day, hour, minute);
+    scheduledDate = scheduledDate.subtract(Duration(minutes: remind));
 
     if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
+      if (repeat == 'Daily') {
+        scheduledDate = tz.TZDateTime(location, now.year, now.month,
+            (formattedDate.day) + 1, hour, minute);
+      }
+      if (repeat == 'Weekly') {
+        scheduledDate = tz.TZDateTime(location, now.year, now.month,
+            (formattedDate.day) + 7, hour, minute);
+      }
+      if (repeat == 'Monhtly') {
+        scheduledDate = tz.TZDateTime(location, now.year,
+            (formattedDate.month) + 1, (formattedDate.day), hour, minute);
+      }
+      scheduledDate = scheduledDate.subtract(Duration(minutes: remind));
     }
 
     return scheduledDate;
   }
+
+  // tz.TZDateTime remindAfter(int remind, tz.TZDateTime scheduledDate) {
+  //   return scheduledDate.subtract( Duration(minutes: remind));
+  // }
+
+  // remindAfter(remind, DateTime scheduledDate) {
+
+  // }
 
   void requestIOSPermissions() {
     flutterLocalNotificationsPlugin
@@ -121,17 +144,14 @@ class NotifyHelper {
         );
   }
 
-  Future<void> _configureLocalTimeZone() async {
-    tz.initializeTimeZones(); // Initializes timezone data
+  canselNotification(Task task) async {
+    await flutterLocalNotificationsPlugin.cancel(task.id!);
+    log('notification canseled');
+  }
 
-    // // Automatically gets the local timezone
-    // final String timeZoneName = tz.local.name;
-
-    // // Log the local timezone for debugging
-    // log('Local timezone: $timeZoneName');
-
-    // Set the local timezone for scheduling notifications
-    tz.setLocalLocation(tz.getLocation('Africa/Cairo'));
+  canselAllNotification() async {
+    await flutterLocalNotificationsPlugin.cancelAll();
+    log('all notification canseled');
   }
 
   void _configureLocalTimeZoneCC() {
@@ -168,7 +188,6 @@ class NotifyHelper {
 
   void _configureSelectNotificationSubject() {
     selectNotificationSubject.stream.listen((String payload) async {
-      debugPrint('My payload is ' + payload);
       await Get.to(() => NotificationScreen(payload: payload));
     });
   }

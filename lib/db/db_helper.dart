@@ -1,3 +1,5 @@
+// ignore_for_file: no_leading_underscores_for_local_identifiers
+
 import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
@@ -14,7 +16,7 @@ class DbHelper {
     } else {
       try {
         String _path = '${await getDatabasesPath()}task.db';
-        _db = await openDatabase(_path, version: 1,
+        _db = await openDatabase(_path, version: _version,
             onCreate: (Database db, int version) async {
           await db.execute(
               'CREATE TABLE $_tableName (id INTEGER PRIMARY KEY AUTOINCREMENT,title STRING, note TEXT , date STRING, startTime STRING, endTime STRING, remind INTEGER, repeat STRING, color INTEGER, isCompleted INTEGER )');
@@ -33,6 +35,13 @@ class DbHelper {
   static Future<int> delete(Task task) async {
     log('delete to data base');
     return await _db!.delete(_tableName, where: 'id = ?', whereArgs: [task.id]);
+  }
+
+  static Future<int> deleteAll() async {
+    log('delete all data base');
+    return await _db!.delete(
+      _tableName,
+    );
   }
 
   static Future<List<Map<String, dynamic>>> query() async {

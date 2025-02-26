@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -21,8 +19,6 @@ class ThemeServices {
   }
 
   void switchMode() async {
-    bool isDark = _loadThemeFromeBox();
-
     Get.changeThemeMode(
         _loadThemeFromeBox() ? ThemeMode.light : ThemeMode.dark);
     //await Future.delayed(const Duration(milliseconds: 1000));
